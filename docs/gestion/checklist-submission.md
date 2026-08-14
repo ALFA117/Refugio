@@ -24,7 +24,7 @@
 ## Submission en DoraHacks
 - [~] BUIDL page completa (descripción, tech stack, integración con Decentraland) — borrador listo en `docs/submission/buidl-page.md`, faltan 3 links + team
 - [ ] Video de demo grabado (mostrar el componente social — jugadores reales interactuando, no solo un jugador solo) — guion listo en `docs/submission/video-guion.md`
-- [~] Repo de GitHub público con README — README real escrito; falta crear el repo (aún no es repositorio git) y publicarlo
+- [x] Repo de GitHub público con README — https://github.com/ALFA117/Refugio (público, main, README real)
 - [ ] Link a la escena publicada incluido en el submission
 - [ ] Submission enviado con margen antes del deadline (no en las últimas horas)
 
