@@ -77,7 +77,7 @@ const FireBar = () => {
       uiBackground={{ color: PANEL_BG }}
     >
       <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Label value="SALUD DEL FUEGO" fontSize={11} color={MUTED} textAlign="middle-left" />
+        <Label value="SALUD DEL FUEGO" fontSize={11} color={VIOLET} textAlign="middle-left" />
         <Label value={`${pct}%`} fontSize={14} font="monospace" color={healthColor(pct)} textAlign="middle-right" />
       </UiEntity>
       <UiEntity uiTransform={{ width: '100%', height: 10, margin: { top: 8 } }} uiBackground={{ color: BAR_TRACK }}>
@@ -117,7 +117,7 @@ const Leaderboard = ({ entries }: { entries: { displayName: string; brasas: numb
     }}
     uiBackground={{ color: PANEL_BG }}
   >
-    <Label value="GUARDIANES DEL FUEGO" fontSize={12} color={EMBER} textAlign="middle-left" />
+    <Label value="GUARDIANES DEL FUEGO" fontSize={12} color={VIOLET} textAlign="middle-left" />
     {entries.slice(0, 5).map((e, i) => (
       <UiEntity
         key={i}
@@ -131,7 +131,7 @@ const Leaderboard = ({ entries }: { entries: { displayName: string; brasas: numb
         }}
       >
         <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Label value={`${i + 1}`} fontSize={12} font="monospace" color={i === 0 ? AMBER : MUTED} />
+          <Label value={`${i + 1}`} fontSize={12} font="monospace" color={i === 0 ? SPARK : MUTED} />
           <Label value={e.displayName} fontSize={13} color={WARM_WHITE} textAlign="middle-left" uiTransform={{ margin: { left: 10 } }} />
         </UiEntity>
         <Label value={`🔥 ${e.brasas}`} fontSize={13} font="monospace" color={MUTED} textAlign="middle-right" />
@@ -211,22 +211,26 @@ const ProgressDots = ({ total, active, alpha }: { total: number; active: number;
       <UiEntity
         key={i}
         uiTransform={{ width: i === active ? 26 : 9, height: 9, margin: { left: 5, right: 5 } }}
-        uiBackground={{ color: withAlpha(i === active ? EMBER : MUTED, alpha * (i === active ? 1 : 0.5)) }}
+        uiBackground={{ color: withAlpha(i === active ? EMBER : VIOLET, alpha * (i === active ? 1 : 0.5)) }}
       />
     ))}
   </UiEntity>
 )
 
-// --- Paleta ember (adaptada del design system "Immersive/Interactive") -----
+// --- Paleta "Twilight Ember" (unificada con el sitio companion) ------------
+// Noche violeta/índigo con fuego ember + acento violeta. EMBER/AMBER se reservan
+// para lo que es literalmente fuego (brasas, salud); VIOLET para estructura (labels).
 
-const EMBER = Color4.create(1, 0.48, 0.1, 1)
-const AMBER = Color4.create(0.98, 0.72, 0.05, 1)
-const WARM_WHITE = Color4.create(0.96, 0.93, 0.88, 1)
-const MUTED = Color4.create(0.72, 0.67, 0.6, 1)
-const PANEL_BG = Color4.create(0.05, 0.04, 0.05, 0.82)
-const CARD_BG = Color4.create(0.1, 0.07, 0.08, 1)
-const OVERLAY_BG = Color4.create(0.02, 0.02, 0.03, 0.72)
-const BAR_TRACK = Color4.create(0.18, 0.14, 0.12, 1)
+const EMBER = Color4.create(1, 0.478, 0.176, 1) // #ff7a2d
+const AMBER = Color4.create(1, 0.702, 0.278, 1) // #ffb347
+const SPARK = Color4.create(1, 0.839, 0.42, 1) // #ffd66b
+const VIOLET = Color4.create(0.635, 0.506, 1, 1) // #a281ff — acento estructural
+const WARM_WHITE = Color4.create(0.961, 0.933, 0.902, 1) // #f5eee6
+const MUTED = Color4.create(0.714, 0.682, 0.796, 1) // #b6aecb — gris con sesgo violeta
+const PANEL_BG = Color4.create(0.055, 0.04, 0.086, 0.82) // noche violeta translúcida
+const CARD_BG = Color4.create(0.098, 0.067, 0.157, 1) // #191128
+const OVERLAY_BG = Color4.create(0.02, 0.015, 0.035, 0.72)
+const BAR_TRACK = Color4.create(0.14, 0.11, 0.2, 1)
 
 function withAlpha(c: Color4, a: number): Color4 {
   return Color4.create(c.r, c.g, c.b, Math.max(0, Math.min(1, a)))
@@ -235,6 +239,6 @@ function withAlpha(c: Color4, a: number): Color4 {
 // Verde/ámbar/rojo según salud.
 function healthColor(pct: number): Color4 {
   if (pct >= 60) return Color4.create(0.3, 0.82, 0.35, 1)
-  if (pct >= 30) return Color4.create(1, 0.72, 0.12, 1)
+  if (pct >= 30) return AMBER
   return Color4.create(0.92, 0.28, 0.16, 1)
 }
