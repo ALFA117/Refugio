@@ -6,6 +6,7 @@ A social multiplayer experience for **Decentraland (SDK7)**, built for the **Fri
 
 - 🔗 Live scene: _`<añadir URL de la parcela publicada>`_
 - 🎬 Demo video: _`<añadir link del video>`_
+- 🏆 Public leaderboard (companion): **[refugio-azure.vercel.app](https://refugio-azure.vercel.app)** · repo [ALFA117/refugio-wall](https://github.com/ALFA117/refugio-wall)
 - 📄 Submission (BUIDL page): [`docs/submission/buidl-page.md`](docs/submission/buidl-page.md)
 
 ---
