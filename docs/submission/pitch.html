@@ -1,0 +1,594 @@
+<title>Refugio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* Refugio — single visual world: a campfire at night. Committed dark-first;
+     every color painted explicitly so it holds on any host ground.
+     Motion follows the motion-library principles (spring feel via cubic-bezier,
+     orchestrated load, stagger, exit<enter, interruptible, reduced-motion). */
+  :root {
+    --ground: #0b0908;
+    --ground-2: #100c0a;
+    --surface: #14100d;
+    --surface-2: #1c1611;
+    --line: rgba(255, 170, 90, 0.14);
+    --line-strong: rgba(255, 170, 90, 0.28);
+    --ember: #ff6a1a;
+    --amber: #f5a623;
+    --spark: #ffd24a;
+    --warm-white: #f3ebdf;
+    --ash: #b7a99a;
+    --ash-dim: #8a7d70;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --maxw: 1080px;
+    --spring: cubic-bezier(0.16, 1, 0.3, 1);         /* ease-out-expo, tween entrances */
+    --overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);  /* springy, interactive feedback */
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--warm-white);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+
+  a { color: var(--amber); text-decoration: none; }
+  a:hover { color: var(--spark); }
+  :focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 2px; }
+
+  /* ---- Motion primitives ------------------------------------------------- */
+  /* Load/scroll entrance: hidden until .show is added (orchestrated in JS). */
+  .rise { opacity: 0; transform: translateY(26px); }
+  .rise.show { opacity: 1; transform: none; transition: opacity 0.72s var(--spring), transform 0.72s var(--spring); }
+  .word { display: inline-block; opacity: 0; transform: translateY(0.5em) rotate(1.5deg); }
+  .word.show { opacity: 1; transform: none; transition: opacity 0.6s var(--spring), transform 0.7s var(--spring); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .rise, .word { opacity: 1 !important; transform: none !important; transition: none !important; }
+  }
+
+  /* ---- Hero -------------------------------------------------------------- */
+  .hero { position: relative; min-height: 100dvh; display: flex; align-items: center; padding: 96px 0 64px; }
+  #embers { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; will-change: transform; }
+  .hero-grid {
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 7vw, 78px);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    margin: 18px 0 0;
+  }
+  .hero h1 .flick { color: var(--ember); font-style: italic; }
+  .hero .lede { margin-top: 22px; max-width: 30ch; color: var(--ash); font-size: clamp(16px, 2.2vw, 19px); }
+  .hero .meta { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    color: var(--ash); border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 12px; background: var(--surface);
+    transition: border-color 0.25s ease, color 0.25s ease, transform 0.25s var(--overshoot);
+  }
+  .chip:hover { color: var(--warm-white); border-color: var(--line-strong); transform: translateY(-2px); }
+
+  /* scroll cue */
+  .cue { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--ash-dim); font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; }
+  .cue .bar { width: 1px; height: 34px; background: linear-gradient(var(--amber), transparent); animation: cuepulse 2.2s var(--spring) infinite; transform-origin: top; }
+  @keyframes cuepulse { 0%,100% { opacity: 0.3; transform: scaleY(0.5); } 50% { opacity: 1; transform: scaleY(1); } }
+  @media (prefers-reduced-motion: reduce) { .cue .bar { animation: none; opacity: 0.6; } }
+
+  /* ---- Interactive campfire window -------------------------------------- */
+  .fire-window {
+    position: relative; border: 1px solid var(--line-strong); border-radius: 16px;
+    background:
+      radial-gradient(120% 80% at 50% 118%, rgba(255,106,26,0.16), transparent 60%),
+      linear-gradient(180deg, var(--ground-2), #060504);
+    overflow: hidden; box-shadow: 0 30px 80px -40px rgba(255,106,26,0.45);
+  }
+  .fire-window .label {
+    position: absolute; top: 12px; left: 14px; z-index: 3;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--ash-dim);
+  }
+  .fire-window .label b { color: var(--good, #4fbf6a); font-weight: 400; }
+  #fire { display: block; width: 100%; height: 300px; }
+  .fire-ui {
+    position: relative; z-index: 3; padding: 16px 18px 18px;
+    border-top: 1px solid var(--line);
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.35));
+  }
+  .guardians { display: flex; align-items: center; gap: 7px; min-height: 26px; flex-wrap: wrap; }
+  .g-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--spark), var(--ember) 70%);
+    box-shadow: 0 0 10px rgba(255,140,40,0.6);
+    animation: pop 0.42s var(--overshoot);
+  }
+  .g-dot.leaving { animation: dotOut 0.26s ease forwards; }
+  @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes dotOut { to { transform: scale(0) translateY(-6px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .g-dot, .g-dot.leaving { animation: none; } }
+
+  .fire-readout { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 12px; }
+  .fire-readout .k { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ash-dim); }
+  .fire-readout .v { font-family: var(--mono); font-size: 14px; color: var(--amber); font-variant-numeric: tabular-nums; }
+  .track { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .track > i {
+    display: block; height: 100%; width: 20%;
+    background: linear-gradient(90deg, var(--ember), var(--spark));
+    transition: width 0.55s var(--spring);
+  }
+  .controls { display: flex; gap: 10px; margin-top: 16px; }
+  .btn {
+    font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer;
+    border-radius: 10px; padding: 11px 16px; border: 1px solid transparent;
+    transition: transform 0.18s var(--overshoot), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:active { transform: scale(0.95); }
+  .btn-primary { background: var(--ember); color: #1a0d04; box-shadow: 0 8px 24px -10px rgba(255,106,26,0.8); }
+  .btn-primary:hover { background: var(--spark); box-shadow: 0 12px 30px -10px rgba(255,180,60,0.9); }
+  .btn-ghost { background: transparent; color: var(--ash); border-color: var(--line-strong); }
+  .btn-ghost:hover { color: var(--warm-white); border-color: var(--amber); }
+  .hint { margin-top: 10px; font-size: 12.5px; color: var(--ash-dim); }
+
+  /* ---- Sections --------------------------------------------------------- */
+  section { position: relative; padding: 92px 0; }
+  .rule { border: none; border-top: 1px solid var(--line); margin: 0; }
+
+  .statement { font-family: var(--serif); font-size: clamp(28px, 4.6vw, 46px); line-height: 1.14; letter-spacing: -0.01em; max-width: 20ch; }
+  .statement .em { color: var(--ember); }
+  .lead-2 { margin-top: 22px; max-width: 58ch; color: var(--ash); font-size: 18px; }
+
+  .sec-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 40px; }
+  .sec-head h2 { font-size: clamp(26px, 4vw, 40px); letter-spacing: -0.01em; }
+
+  /* Use-case slides */
+  .slides { display: grid; gap: 18px; }
+  .slide {
+    display: grid; grid-template-columns: 68px 1fr auto; gap: 22px; align-items: start;
+    padding: 26px; border: 1px solid var(--line); border-radius: 14px;
+    background: linear-gradient(180deg, var(--surface), var(--ground-2));
+    transition: border-color 0.3s ease, transform 0.4s var(--spring), box-shadow 0.4s var(--spring);
+  }
+  .slide:hover { border-color: var(--line-strong); transform: translateY(-3px); box-shadow: 0 20px 50px -30px rgba(255,106,26,0.5); }
+  .slide .num { font-family: var(--mono); font-size: 26px; color: var(--ember); font-variant-numeric: tabular-nums; line-height: 1; transition: transform 0.35s var(--overshoot), text-shadow 0.35s ease; }
+  .slide:hover .num { transform: scale(1.18); text-shadow: 0 0 22px rgba(255,106,26,0.7); }
+  .slide h3 { font-size: 22px; letter-spacing: -0.01em; }
+  .slide p { margin-top: 8px; color: var(--ash); font-size: 15.5px; max-width: 54ch; }
+  .tag {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 999px; white-space: nowrap; align-self: center;
+  }
+  .tag.server { color: var(--ember); border: 1px solid var(--line-strong); background: rgba(255,106,26,0.08); }
+  .tag.client { color: var(--ash); border: 1px solid var(--line); }
+
+  /* Judging trio */
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .panel { padding: 26px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); transition: transform 0.4s var(--spring), border-color 0.3s ease; }
+  .panel:hover { transform: translateY(-3px); border-color: var(--line-strong); }
+  .panel .k { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber); }
+  .panel h3 { font-size: 20px; margin-top: 10px; }
+  .panel p { margin-top: 10px; color: var(--ash); font-size: 15px; }
+
+  /* Architecture */
+  .arch { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .node { border: 1px solid var(--line); border-radius: 14px; padding: 22px; background: var(--surface); }
+  .node.server { border-color: var(--line-strong); background: linear-gradient(180deg, rgba(255,106,26,0.06), var(--surface)); }
+  .node .role { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ember); }
+  .node ul { margin: 12px 0 0; padding-left: 18px; color: var(--ash); font-size: 15px; }
+  .node li { margin: 6px 0; }
+  .node li code { font-family: var(--mono); font-size: 13px; color: var(--warm-white); background: var(--surface-2); padding: 1px 6px; border-radius: 5px; }
+
+  /* Close */
+  .close { text-align: center; padding: 110px 0 40px; }
+  .close .quote { font-family: var(--serif); font-style: italic; font-size: clamp(24px, 4vw, 38px); line-height: 1.2; max-width: 22ch; margin: 0 auto; }
+  .links { margin-top: 40px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .link-card {
+    font-family: var(--mono); font-size: 13px; color: var(--warm-white);
+    border: 1px solid var(--line-strong); border-radius: 10px; padding: 12px 18px; background: var(--surface);
+    transition: border-color 0.2s ease, color 0.2s ease, transform 0.25s var(--overshoot);
+  }
+  .link-card:hover { border-color: var(--amber); color: var(--spark); transform: translateY(-2px); }
+  .link-card span { color: var(--ash-dim); }
+  footer { text-align: center; padding: 40px 0 64px; color: var(--ash-dim); font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; }
+
+  @media (max-width: 860px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+    .trio { grid-template-columns: 1fr; }
+    .arch { grid-template-columns: 1fr; }
+    .slide { grid-template-columns: 44px 1fr; }
+    .slide .tag { grid-column: 2; justify-self: start; margin-top: 4px; }
+    .cue { display: none; }
+  }
+</style>
+
+<div class="hero">
+  <canvas id="embers" aria-hidden="true"></canvas>
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow rise" data-load>Decentraland · SDK7 · Friendzone Hackathon</div>
+      <h1 id="headline"></h1>
+      <p class="lede rise" data-load>A social world where the fire is a live readout of who's present — and strangers keep it alive together. No host. No scheduled event.</p>
+      <div class="meta rise" data-load>
+        <span class="chip">Multiplayer Server</span>
+        <span class="chip">Server-authoritative</span>
+        <span class="chip">Persistent embers</span>
+        <span class="chip">Works cold &amp; alone</span>
+      </div>
+    </div>
+
+    <div class="fire-window rise" data-load>
+      <div class="label"><b>●</b> Live · the fire grows with presence</div>
+      <canvas id="fire" aria-label="Interactive campfire that grows as guardians arrive"></canvas>
+      <div class="fire-ui">
+        <div class="guardians" id="guardians" aria-hidden="true"></div>
+        <div class="fire-readout">
+          <span class="k">Fire intensity</span>
+          <span class="v" id="intensity">0.38×</span>
+        </div>
+        <div class="track"><i id="fill"></i></div>
+        <div class="controls">
+          <button class="btn btn-primary" id="add">Someone sits down &nbsp;+</button>
+          <button class="btn btn-ghost" id="reset">Empty the circle</button>
+        </div>
+        <p class="hint">Try it: each guardian who arrives makes the fire roar a little louder — exactly how the real scene reacts.</p>
+      </div>
+    </div>
+  </div>
+  <div class="cue"><span>SCROLL</span><span class="bar"></span></div>
+</div>
+
+<hr class="rule">
+
+<section>
+  <div class="wrap reveal rise">
+    <div class="eyebrow">The problem</div>
+    <p class="statement" style="margin-top:18px;">Most social worlds are <span class="em">empty rooms.</span></p>
+    <p class="lead-2">They only feel alive during a hosted, scheduled event. Walk in at a random hour and you get a beautiful, lifeless space. That empty-venue failure is exactly what this hackathon disqualifies — an experience that needs a host doesn't count. Refugio is built so the social moment emerges from whoever walks in, at any hour, with zero coordination.</p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal rise">
+      <div class="eyebrow">How it works</div>
+      <h2>Seven systems, one fire.</h2>
+    </div>
+    <div class="slides" id="slides"></div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal rise">
+      <div class="eyebrow">Why it wins</div>
+      <h2>Judged on the thing it's built around.</h2>
+    </div>
+    <div class="trio">
+      <div class="panel reveal rise">
+        <div class="k">Social Value · core</div>
+        <h3>The mechanic is the signal</h3>
+        <p>The fire is a live count of who's present, and the mini-game hands strangers a shared goal within seconds of arriving. Cooperation is the default state, not an opt-in.</p>
+      </div>
+      <div class="panel reveal rise">
+        <div class="k">Hard requirement</div>
+        <h3>No host, ever</h3>
+        <p>Rounds are arbitrated by Decentraland's authoritative server on its own clock — not a designated "host" client. There's no point of coordination that can be absent. Verified by entering cold.</p>
+      </div>
+      <div class="panel reveal rise">
+        <div class="k">Retention · discovery</div>
+        <h3>A reason to return</h3>
+        <p>Persistent embers and an in-world leaderboard reward coming back; the referral link turns each guardian into a discovery channel that brings the next one.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal rise">
+      <div class="eyebrow">Architecture</div>
+      <h2>One codebase, split at the fire.</h2>
+    </div>
+    <div class="arch">
+      <div class="node reveal rise">
+        <div class="role">Client · every player</div>
+        <ul>
+          <li>Fire intensity + seats, synced with <code>syncEntity</code></li>
+          <li>Taps firewood, sends <code>feedFire</code> to the server</li>
+          <li>Reads authoritative state → HUD, flame, leaderboard</li>
+          <li>UI in <code>react-ecs</code>: onboarding, ember count, health bar</li>
+        </ul>
+      </div>
+      <div class="node server reveal rise">
+        <div class="role">Authoritative server · isServer()</div>
+        <ul>
+          <li>Runs the round: spawns wood, decays health, ends the round</li>
+          <li>Validates every feed — clients never request rewards</li>
+          <li>Sole writer of <code>Storage</code>: embers + world leaderboard</li>
+          <li>Grants the referral bonus when both play a round together</li>
+        </ul>
+      </div>
+    </div>
+    <p class="lead-2 reveal rise" style="margin-top:24px;">Decentraland hosts the authoritative server automatically on publish — no external infrastructure, and real anti-cheat by design: the server arbitrates the round it timed itself.</p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<div class="close">
+  <div class="wrap reveal rise">
+    <p class="quote">“A fire is just light until someone sits down next to you.”</p>
+    <div class="links">
+      <a class="link-card" href="#" id="link-scene"><span>Live scene →</span> add URL</a>
+      <a class="link-card" href="#" id="link-video"><span>Demo video →</span> add URL</a>
+      <a class="link-card" href="#" id="link-repo"><span>GitHub →</span> add URL</a>
+    </div>
+  </div>
+  <footer>REFUGIO · 🔥 · BUILT ON DECENTRALAND</footer>
+</div>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var DPR = function () { return Math.min(window.devicePixelRatio || 1, 2); };
+
+    /* ---- Headline: build word-by-word for a staggered rise --------------- */
+    var headline = document.getElementById('headline');
+    var parts = [
+      { t: 'A' }, { t: 'campfire' }, { t: 'that' }, { t: 'only' }, { t: 'burns' }, { t: 'when' },
+      { t: 'people', flick: true }, { t: 'show', flick: true }, { t: 'up.', flick: true }
+    ];
+    parts.forEach(function (p) {
+      var span = document.createElement('span');
+      span.className = 'word' + (p.flick ? ' flick' : '');
+      span.textContent = p.t;
+      headline.appendChild(span);
+      headline.appendChild(document.createTextNode(' '));
+    });
+
+    /* ---- Orchestrated load sequence (tween entrances, staggered) --------- */
+    function orchestrate() {
+      var seq = [];
+      headline.querySelectorAll('.word').forEach(function (w) { seq.push(w); });
+      document.querySelectorAll('[data-load]').forEach(function (n) { seq.push(n); });
+      if (reduce) { seq.forEach(function (n) { n.classList.add('show'); }); return; }
+      seq.forEach(function (n, i) {
+        setTimeout(function () { n.classList.add('show'); }, 120 + i * 62);
+      });
+    }
+
+    /* ---- Use-case slides (the seven systems, a real build sequence) ----- */
+    var systems = [
+      ['01', 'Living Fire', 'The campfire’s intensity scales in real time with the number of players present. One person sees a small flame; a group sees it roar. The space visibly reacts to you being there.', 'client'],
+      ['02', 'Seats', 'Tap a log to sit around the fire. Occupancy syncs to every client, so presence becomes legible — you can see who joined the circle without a word.', 'client'],
+      ['03', 'Guardians of the Fire', 'A 3-minute cooperative round that starts on its own. Firewood appears; anyone taps it in time to feed the flame. Keep it above 50% together and everyone earns embers.', 'server'],
+      ['04', 'Embers', 'The currency of the campfire, granted on round completion and saved per wallet — never zero for anyone who participated. Persists across sessions and redeploys.', 'server'],
+      ['05', 'Leaderboard', 'The top guardians, kept in world storage and shown in-world. A persistent reason to come back and climb.', 'server'],
+      ['06', 'Referral', 'An invite link rewards both the inviter and the newcomer once they complete a round together — the loop that turns one player into a group.', 'server'],
+      ['07', 'Onboarding + HUD', 'Three skippable screens explain the fire, the seats, and the game; a live HUD shows your embers, the fire’s health, and a graceful “lighting the fire…” state while the server wakes.', 'client']
+    ];
+    var slidesEl = document.getElementById('slides');
+    systems.forEach(function (s, i) {
+      var el = document.createElement('div');
+      el.className = 'slide reveal rise';
+      /* per-item stagger via transition-delay (capped, motion-principle) */
+      if (!reduce) el.style.transitionDelay = Math.min(i * 55, 360) + 'ms';
+      el.innerHTML =
+        '<div class="num">' + s[0] + '</div>' +
+        '<div><h3>' + s[1] + '</h3><p>' + s[2] + '</p></div>' +
+        '<div class="tag ' + s[3] + '">' + s[3] + '</div>';
+      slidesEl.appendChild(el);
+    });
+
+    /* ---- Scroll reveal (spring-ish, once) ------------------------------- */
+    if (reduce || !('IntersectionObserver' in window)) {
+      document.querySelectorAll('.reveal').forEach(function (n) { n.classList.add('show'); });
+    } else {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('show'); io.unobserve(e.target); } });
+      }, { threshold: 0.12, rootMargin: '-40px' });
+      document.querySelectorAll('.reveal').forEach(function (n) { io.observe(n); });
+    }
+
+    /* ---- Hero ambient embers with subtle scroll parallax ---------------- */
+    var bg = document.getElementById('embers');
+    var bctx = bg.getContext('2d');
+    var bgP = [];
+    var bgRaf = null;
+    function bgSize() { var r = bg.getBoundingClientRect(); bg.width = r.width * DPR(); bg.height = r.height * DPR(); }
+    function bgBoot() {
+      bgSize();
+      if (reduce) { bctx.clearRect(0, 0, bg.width, bg.height); return; }
+      function f() {
+        var w = bg.width, h = bg.height;
+        bctx.clearRect(0, 0, w, h);
+        if (Math.random() < 0.45) bgP.push({ x: Math.random() * w, y: h + 10, vy: -(0.3 + Math.random() * 0.7), life: 1, size: 0.6 + Math.random() * 1.6, hue: 20 + Math.random() * 20, ph: Math.random() * 6.28 });
+        for (var p = bgP.length - 1; p >= 0; p--) {
+          var pt = bgP[p]; pt.y += pt.vy * DPR(); pt.x += Math.sin(pt.y * 0.01 + pt.ph) * 0.5; pt.life -= 0.0038;
+          if (pt.life <= 0 || pt.y < -20) { bgP.splice(p, 1); continue; }
+          bctx.globalAlpha = Math.max(0, pt.life * 0.5);
+          bctx.fillStyle = 'hsl(' + pt.hue + ',100%,58%)';
+          bctx.beginPath(); bctx.arc(pt.x, pt.y, pt.size * DPR(), 0, 6.28); bctx.fill();
+        }
+        bctx.globalAlpha = 1;
+        if (bgP.length > 170) bgP.splice(0, bgP.length - 170);
+        bgRaf = requestAnimationFrame(f);
+      }
+      if (bgRaf) cancelAnimationFrame(bgRaf);
+      f();
+    }
+    if (!reduce) {
+      var ticking = false;
+      window.addEventListener('scroll', function () {
+        if (ticking) return; ticking = true;
+        requestAnimationFrame(function () { bg.style.transform = 'translateY(' + (window.scrollY * 0.18) + 'px)'; ticking = false; });
+      }, { passive: true });
+    }
+
+    /* ---- Interactive campfire (canvas) ---------------------------------- */
+    var guardians = 1, MAXG = 12;
+    var fire = document.getElementById('fire');
+    var fctx = fire.getContext('2d');
+    var dots = document.getElementById('guardians');
+    var intensityEl = document.getElementById('intensity');
+    var fillEl = document.getElementById('fill');
+    var particles = [];
+    var pulse = 0;      // brief flame boost on guardian add
+    var flicker = 0;    // continuous flame flicker phase
+
+    function intensity() { return Math.min(1.5, 0.3 + guardians * 0.08); }
+
+    /* interruptible count-up for the intensity readout */
+    var intAnim = null, shown = intensity();
+    function animateIntensity() {
+      if (intAnim) cancelAnimationFrame(intAnim);
+      var from = shown, to = intensity(), t0 = performance.now(), dur = reduce ? 0 : 480;
+      function step(now) {
+        var k = dur ? Math.min(1, (now - t0) / dur) : 1;
+        var e = 1 - Math.pow(1 - k, 3);
+        shown = from + (to - from) * e;
+        intensityEl.textContent = shown.toFixed(2) + '×';
+        if (k < 1) intAnim = requestAnimationFrame(step); else shown = to;
+      }
+      intAnim = requestAnimationFrame(step);
+    }
+
+    function renderUI(rebuildDots) {
+      var i = intensity();
+      animateIntensity();
+      fillEl.style.width = Math.round(((i - 0.3) / (1.5 - 0.3)) * 100) + '%';
+      if (rebuildDots !== false) {
+        dots.innerHTML = '';
+        for (var n = 0; n < guardians; n++) { var d = document.createElement('span'); d.className = 'g-dot'; dots.appendChild(d); }
+      }
+    }
+
+    function sizeFire() { var r = fire.getBoundingClientRect(); fire.width = r.width * DPR(); fire.height = r.height * DPR(); }
+
+    function spawn(w, h, i, burst) {
+      var cx = w / 2 + (Math.random() - 0.5) * 44 * i;
+      particles.push({
+        x: cx, y: h - 24 * DPR(),
+        vx: (Math.random() - 0.5) * (burst ? 1.4 : 0.5),
+        vy: -(0.6 + Math.random() * 1.1) * (0.7 + i * 0.4) * (burst ? 1.7 : 1),
+        life: 1, size: (1 + Math.random() * 2.4 * i) * (burst ? 1.2 : 1),
+        hue: 18 + Math.random() * 26
+      });
+    }
+
+    function frame() {
+      var w = fire.width, h = fire.height, i = intensity();
+      flicker += 0.12;
+      pulse *= 0.9;
+      var wobble = 1 + Math.sin(flicker) * 0.05 + Math.sin(flicker * 2.3) * 0.03;
+      fctx.clearRect(0, 0, w, h);
+
+      var baseY = h - 20 * DPR();
+      // glow
+      var gr = fctx.createRadialGradient(w / 2, baseY, 0, w / 2, baseY, (80 + i * 120) * (1 + pulse * 0.4) * DPR());
+      gr.addColorStop(0, 'rgba(255,150,50,' + (0.20 + i * 0.28 + pulse * 0.2) + ')');
+      gr.addColorStop(0.4, 'rgba(255,90,20,' + (0.10 + i * 0.14) + ')');
+      gr.addColorStop(1, 'rgba(255,60,0,0)');
+      fctx.fillStyle = gr; fctx.fillRect(0, 0, w, h);
+
+      // core flame (flickering + brief pulse on add)
+      var fh = (60 + i * 90) * (1 + pulse * 0.5) * wobble * DPR();
+      var fw = (26 + i * 30) * wobble * DPR();
+      var sway = Math.sin(flicker * 0.9) * 6 * DPR();
+      var flame = fctx.createLinearGradient(0, baseY, 0, baseY - fh);
+      flame.addColorStop(0, 'rgba(255,210,80,0.92)');
+      flame.addColorStop(0.5, 'rgba(255,120,30,0.72)');
+      flame.addColorStop(1, 'rgba(255,60,0,0)');
+      fctx.fillStyle = flame;
+      fctx.beginPath();
+      fctx.moveTo(w / 2 - fw, baseY);
+      fctx.quadraticCurveTo(w / 2 - fw * 0.3, baseY - fh * 0.6, w / 2 + sway, baseY - fh);
+      fctx.quadraticCurveTo(w / 2 + fw * 0.3, baseY - fh * 0.6, w / 2 + fw, baseY);
+      fctx.closePath(); fctx.fill();
+
+      // embers
+      var rate = 0.4 + i * 1.6;
+      for (var s = 0; s < rate; s++) if (Math.random() < 0.8) spawn(w, h, i, false);
+      for (var p = particles.length - 1; p >= 0; p--) {
+        var pt = particles[p];
+        pt.x += pt.vx * DPR(); pt.y += pt.vy * DPR(); pt.life -= 0.008 + Math.random() * 0.006;
+        pt.vx += (Math.random() - 0.5) * 0.08;
+        if (pt.life <= 0) { particles.splice(p, 1); continue; }
+        fctx.globalAlpha = Math.max(0, pt.life);
+        fctx.fillStyle = 'hsl(' + pt.hue + ',100%,' + (55 + pt.life * 15) + '%)';
+        fctx.beginPath(); fctx.arc(pt.x, pt.y, pt.size * DPR(), 0, 6.28); fctx.fill();
+      }
+      fctx.globalAlpha = 1;
+      if (particles.length > 460) particles.splice(0, particles.length - 460);
+      raf = requestAnimationFrame(frame);
+    }
+
+    function staticFire() {
+      var w = fire.width, h = fire.height, i = intensity(), baseY = h - 20 * DPR();
+      fctx.clearRect(0, 0, w, h);
+      var gr = fctx.createRadialGradient(w / 2, baseY, 0, w / 2, baseY, (80 + i * 120) * DPR());
+      gr.addColorStop(0, 'rgba(255,150,50,' + (0.24 + i * 0.28) + ')');
+      gr.addColorStop(1, 'rgba(255,60,0,0)');
+      fctx.fillStyle = gr; fctx.fillRect(0, 0, w, h);
+    }
+
+    var raf = null;
+    function fireBoot() {
+      sizeFire(); renderUI();
+      if (reduce) staticFire(); else { if (raf) cancelAnimationFrame(raf); frame(); }
+    }
+
+    document.getElementById('add').addEventListener('click', function () {
+      if (guardians >= MAXG) return;
+      guardians++;
+      renderUI();
+      pulse = 1; // flame whoosh
+      if (!reduce) { var w = fire.width, h = fire.height, i = intensity(); for (var b = 0; b < 26; b++) spawn(w, h, i, true); }
+    });
+
+    document.getElementById('reset').addEventListener('click', function () {
+      var existing = dots.querySelectorAll('.g-dot');
+      if (reduce || !existing.length) { guardians = 0; renderUI(); return; }
+      existing.forEach(function (d, i) { d.style.animation = 'none'; void d.offsetWidth; d.style.animationDelay = (i * 28) + 'ms'; d.classList.add('leaving'); });
+      guardians = 0; renderUI(false); // update readout/bar now, dots animate out
+      setTimeout(function () { dots.innerHTML = ''; }, 260 + existing.length * 28);
+    });
+
+    var rT;
+    window.addEventListener('resize', function () { clearTimeout(rT); rT = setTimeout(function () { fireBoot(); bgBoot(); }, 150); });
+
+    orchestrate();
+    fireBoot();
+    bgBoot();
+  })();
+</script>
