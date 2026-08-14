@@ -7,7 +7,8 @@
 // del resultado de la ronda que él mismo arbitró, y sólo él escribe Storage.
 
 import { getPlayer } from '@dcl/sdk/players'
-import { Storage } from '@dcl/sdk/server'
+import { Storage, EnvVar } from '@dcl/sdk/server'
+import { signedFetch } from '~system/SignedFetch'
 import { room } from '../shared/messages'
 import {
   BRASAS_FULL_REWARD,
@@ -140,8 +141,37 @@ async function updateLeaderboard(updated: LeaderboardEntry[]): Promise<void> {
     void room.send('leaderboardUpdated', {
       entries: top.map((e) => ({ displayName: e.displayName, brasas: e.brasas }))
     })
+
+    // Empuja el snapshot al sitio companion (Wall of Guardians) para el leaderboard público
+    // fuera de Decentraland. Fire-and-forget; sólo actúa si hay EnvVars configuradas.
+    void pushToCompanion(top)
   } catch (e) {
     console.error('[refugio] error actualizando leaderboard', e)
+  }
+}
+
+// signedFetch POST del top al API del companion. Requiere dos EnvVars en el deploy DCL:
+//   COMPANION_URL     → https://refugio-azure.vercel.app/api/leaderboard
+//   COMPANION_SECRET  → mismo valor que REFUGIO_INGEST_SECRET en Vercel
+// Sin ellas no hace nada (el sitio sigue mostrando datos de muestra).
+async function pushToCompanion(top: LeaderboardEntry[]): Promise<void> {
+  try {
+    const url = await EnvVar.get('COMPANION_URL')
+    const secret = await EnvVar.get('COMPANION_SECRET')
+    if (!url || !secret) return
+
+    await signedFetch({
+      url,
+      init: {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-refugio-secret': secret },
+        body: JSON.stringify({
+          entries: top.map((e) => ({ displayName: e.displayName, brasas: e.brasas }))
+        })
+      }
+    })
+  } catch (e) {
+    console.error('[refugio] error empujando snapshot al companion', e)
   }
 }
 
