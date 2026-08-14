@@ -60,7 +60,7 @@ The result: you can enter Refugio **cold, alone, at 3am**, and the experience st
 
 **Works without a host (hard requirement).** The mini-game is arbitrated by Decentraland's **Multiplayer (authoritative) Server**, not by a designated "host" client. Rounds start, firewood spawns, and rewards are granted by the server on its own clock. There is no single point of coordination that can be absent — verified by entering the scene cold.
 
-**Retention & Discovery Value.** Persistent embers and an **in-world leaderboard** (top guardians, always visible) give players a reason to return; the referral loop turns each guardian into a discovery channel. A graceful "lighting the fire…" state covers the server's cold-start so newcomers never hit a broken-looking scene. And the ranking lives **outside** Decentraland too: a public **[Wall of Guardians](https://refugio-azure.vercel.app)** companion site (Next.js) makes the leaderboard shareable on the web — the server pushes a snapshot on every round close.
+**Retention & Discovery Value.** Persistent embers and an **in-world leaderboard** (top guardians, always visible) give players a reason to return; the referral loop turns each guardian into a discovery channel. A graceful "lighting the fire…" state covers the server's cold-start so newcomers never hit a broken-looking scene. And the ranking lives **outside** Decentraland too: a public **[Wall of Guardians](https://wall-of-guardians.vercel.app)** companion site (Next.js) makes the leaderboard shareable on the web — the server pushes a snapshot on every round close.
 
 ---
 
