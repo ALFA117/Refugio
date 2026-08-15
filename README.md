@@ -6,6 +6,7 @@ A social multiplayer experience for **Decentraland (SDK7)**, built for the **Fri
 
 - 🔗 Live scene: _`<añadir URL de la parcela publicada>`_
 - 🎬 Demo video: _`<añadir link del video>`_
+- 🎮 Try it now, no install: **[wall-of-guardians.vercel.app/demo](https://wall-of-guardians.vercel.app/demo)** — a playable web taste of the real mechanic
 - 🏆 Public leaderboard (companion): **[wall-of-guardians.vercel.app](https://wall-of-guardians.vercel.app)** · repo [ALFA117/refugio-wall](https://github.com/ALFA117/refugio-wall)
 - 📄 Submission (BUIDL page): [`docs/submission/buidl-page.md`](docs/submission/buidl-page.md)
 
@@ -34,7 +35,7 @@ Built on **Decentraland SDK7** with the **Multiplayer (authoritative) Server** (
 - **`isServer()` split** — one codebase, a `src/client` branch and a `src/server` branch dispatched at runtime ([`src/index.ts`](src/index.ts)).
 - **State sync** — `syncEntity` with stable enum IDs for seat occupancy and fire health.
 - **Messaging** — a typed message room (`registerMessages` / `room.send` / `room.onMessage`) in [`src/shared/messages.ts`](src/shared/messages.ts).
-- **Anti-cheat by design** — the server arbitrates the round it timed, validates every feed, and is the sole writer of persistent state. Clients never request rewards.
+- **Anti-cheat by design** — the server arbitrates the round it timed, validates every feed (including the player's actual proximity to the firewood, not just a claimed action), and is the sole writer of persistent state. Clients never request rewards.
 - **Persistence** — per-wallet ember balances (`Storage.player`) and the world leaderboard (`Storage`) survive sessions and redeploys.
 - **UI** — `@dcl/sdk/react-ecs` for onboarding and the in-world HUD.
 
