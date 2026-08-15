@@ -33,6 +33,10 @@ export const SERVER_TICK_SECONDS = 0.25 // el servidor recalcula 4x/s, nunca por
 
 // Ubicación de la leña que aparece durante la ronda
 export const WOOD_SPAWN_RADIUS = 1.9 // dentro del anillo de asientos, alcanzable
+// Anti-cheat: el servidor sólo acredita feedFire si el jugador está a esta distancia (m) de
+// la leña. Generoso sobre WOOD_SPAWN_RADIUS para tolerar el collider del avatar y jitter de
+// posición, pero rechaza intentos desde fuera de la escena/otro punto del mapa.
+export const FEED_PROXIMITY_METERS = 4.5
 export const WOOD_Y = 0.6
 
 // Brasas (moneda/progreso) — docs/especificaciones-tecnicas.md sección 5. Sólo el servidor

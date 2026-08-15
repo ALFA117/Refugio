@@ -12,6 +12,7 @@
 
 import { engine } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
+import { getPlayer } from '@dcl/sdk/players'
 import { FireHealth, ensureFireEntity } from '../shared/fire'
 import { room } from '../shared/messages'
 import { awardBrasasToParticipants, registerReferral } from './brasas'
@@ -31,6 +32,7 @@ import {
   WOOD_SPAWN_MAX_SECONDS,
   WOOD_SPAWN_RADIUS,
   FEED_WINDOW_SECONDS,
+  FEED_PROXIMITY_METERS,
   WOOD_Y
 } from '../shared/constants'
 
@@ -147,6 +149,11 @@ function onFeedFire(woodId: number, from?: string) {
   const w = state.wood.get(woodId)
   if (!w || w.fed) return
 
+  // Anti-cheat: rechazar si el jugador no está realmente cerca de esta leña. Sin posición
+  // conocida (jugador recién desconectado, race de red) se rechaza por defecto — nunca se
+  // acredita a ciegas.
+  if (from && !isNearWood(from, w)) return
+
   w.fed = true
   state.health = clampHealth(state.health + FEED_HEALTH_GAIN)
   writeFireHealth(true)
@@ -187,6 +194,18 @@ function writeFireHealth(roundActive: boolean) {
 
 function clampHealth(v: number): number {
   return Math.max(0, Math.min(FIRE_MAX_HEALTH, v))
+}
+
+// Real proximity check instead of trusting the client's claim. `getPlayer` is the same
+// engine-backed helper used client-side (src/server also has it available); if the position
+// can't be resolved we fail closed (reject) rather than assume the player is present.
+function isNearWood(address: string, wood: PendingWood): boolean {
+  const player = getPlayer({ userId: address })
+  const pos = player?.position
+  if (!pos) return false
+  const dx = pos.x - wood.x
+  const dz = pos.z - wood.z
+  return Math.sqrt(dx * dx + dz * dz) <= FEED_PROXIMITY_METERS
 }
 
 function randomSpawnDelay(): number {
