@@ -1,7 +1,7 @@
 import { engine, Transform, MeshRenderer, MeshCollider, Material, InputAction, pointerEventsSystem } from '@dcl/sdk/ecs'
 import { Vector3, Quaternion } from '@dcl/sdk/math'
 import { syncEntity } from '@dcl/sdk/network'
-import { getPlayer } from '@dcl/sdk/players'
+import { getPlayer, onLeaveScene } from '@dcl/sdk/players'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { N_ASIENTOS, SEAT_RADIUS, SEAT_HEIGHT, SEAT_SIT_OFFSET } from '../../shared/constants'
 import { SeatState } from './components'
@@ -37,6 +37,13 @@ export function createSeats(fogataCenter: Vector3) {
 
     registerSeatInteraction(seat, fogataCenter)
   }
+
+  // Edge case real: sin esto, un jugador que se desconecta (cierra el cliente, corte de red)
+  // sin pararse primero deja su asiento "ocupado" para siempre — nadie vuelve a poder
+  // sentarse ahí hasta que el servidor duerma y reinicie el estado. Cada cliente conectado
+  // corre este mismo listener; todos escriben el mismo valor ('') al asiento del que se fue,
+  // así que múltiples escrituras idénticas vía syncEntity no generan conflicto real.
+  onLeaveScene((userId) => releaseMySeats(userId, undefined))
 }
 
 // Posición de cada asiento sobre el círculo alrededor de la fogata.
@@ -76,7 +83,8 @@ function registerSeatInteraction(seat: ReturnType<typeof engine.addEntity>, foga
 }
 
 // Un jugador solo puede ocupar un asiento: al sentarse, libera los demás que tuviera.
-function releaseMySeats(userId: string, except: ReturnType<typeof engine.addEntity>) {
+// `except` es undefined en el caso de desconexión total (liberar todos, sin excepción).
+function releaseMySeats(userId: string, except?: ReturnType<typeof engine.addEntity>) {
   for (const [entity] of engine.getEntitiesWith(SeatState)) {
     if (entity === except) continue
     const s = SeatState.getMutable(entity)

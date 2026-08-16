@@ -1,6 +1,7 @@
 import { getExplorerInformation } from '~system/Runtime'
 import { getPlayer } from '@dcl/sdk/players'
 import { room } from '../shared/messages'
+import { log } from '../shared/log'
 import { REFERRAL_URL_PARAM } from '../shared/constants'
 
 // Lee ?ref=<wallet> del link con el que el jugador entró y avisa al servidor.
@@ -21,6 +22,6 @@ export async function initReferral(): Promise<void> {
 
     void room.send('registerReferral', { referredBy: ref })
   } catch (e) {
-    console.error('[refugio] error leyendo referido', e)
+    log.error('referral_read_failed', e)
   }
 }

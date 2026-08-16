@@ -2,6 +2,7 @@ import { engine, Material, Transform } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
 import { FireHealth } from '../../shared/fire'
 import { room } from '../../shared/messages'
+import { log } from '../../shared/log'
 import { FIRE_MAX_HEALTH } from '../../shared/constants'
 import { spawnWoodVisual, removeWoodVisual, clearAllWood } from '../factory/wood'
 import { getFlame } from '../factory/flame'
@@ -28,7 +29,7 @@ export function registerMinigameHandlers() {
   // Se guarda para el HUD (paso de onboarding/UI); por ahora se registra en consola.
   room.onMessage('brasasAwarded', (data) => {
     brasasBalance = data.balance
-    console.log(`[refugio] +${data.earned} brasas — balance: ${data.balance}`)
+    log.info('brasas_awarded_client', { earned: data.earned, balance: data.balance })
   })
 
   // Leaderboard para el panel in-world.
