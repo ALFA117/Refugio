@@ -33,6 +33,9 @@
 - **Texto:** *"Keep the fire alive — together."*
 - **Narración:** "When firewood appears, anyone taps it in time to feed the fire. The round is run by Decentraland's authoritative server, not by a host — so it works even if you arrive cold and alone."
 - *Beat clave para "Social Value" y "funciona sin host". Muestra 2+ manos alimentando el mismo fuego.*
+- *Opcional (si hay tiempo/espacio): el grupo encadena varias leñas seguidas sin fallar ninguna —
+  la racha cooperativa sube. Un solo miss la reinicia. Es un lindo momento de tensión grupal para
+  mostrar ("¡no la dejen apagar!") si el timing de la grabación lo permite; no es obligatorio.*
 
 ### 1:05–1:20 — Recompensa + leaderboard (retención)
 - **Visual:** cierre de ronda, el HUD suma brasas, aparece/actualiza el **panel de leaderboard** in-world.
@@ -40,10 +43,13 @@
 - **Narración:** "Finish a round and everyone earns embers — saved to your wallet and ranked on a persistent leaderboard."
 
 ### 1:20–1:30 — Invitación + cierre
-- **Visual:** mostrar el link `?ref=` (o un lower-third con el concepto), avatares alrededor del fuego ya grande.
-- **Texto:** *"Every guardian brings the next one."*
-- **Narración / cierre:** "Refugio — because a fire is just light until someone sits down next to you."
-- **Cierra con:** nombre + logo/lockup de Refugio y el link de la escena.
+- **Visual:** mostrar el link `?ref=` (o un lower-third con el concepto), avatares alrededor del fuego ya grande. Corte final rápido (1-2s) a la Wall of Guardians (el leaderboard público en el navegador) — no hace falta narrarlo, un lower-third con la URL alcanza.
+- **Texto:** *"Every guardian brings the next one."* → *"wall-of-guardians.vercel.app"*
+- **Narración / cierre:** "Refugio — because a fire is just light until someone sits down next to you. Can't install Decentraland right now? Try the mechanic in your browser at wall-of-guardians.vercel.app/demo."
+- **Cierra con:** nombre + logo/lockup de Refugio, el link de la escena, y el link del sitio web.
+- *Por qué vale la pena el segundo extra: el sitio companion (leaderboard público + demo jugable
+  sin instalar nada) es una respuesta directa a "discovery" fuera del metaverso — mostrarlo,
+  aunque sea 2 segundos, comunica que el proyecto piensa más allá de la escena.*
 
 ---
 
