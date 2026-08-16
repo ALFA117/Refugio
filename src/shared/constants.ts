@@ -38,6 +38,11 @@ export const WOOD_SPAWN_RADIUS = 1.9 // dentro del anillo de asientos, alcanzabl
 // posición, pero rechaza intentos desde fuera de la escena/otro punto del mapa.
 export const FEED_PROXIMITY_METERS = 4.5
 export const WOOD_Y = 0.6
+// Anti-spam: mínimo tiempo real (ms) entre mensajes feedFire aceptados del MISMO jugador.
+// Proximidad ya evita acreditar salud de forma indebida, pero no evita que un cliente
+// modificado inunde al servidor de mensajes — esto limita el volumen sin afectar el juego
+// legítimo (ningún jugador humano alimenta más rápido que esto).
+export const FEED_RATE_LIMIT_MS = 150
 
 // Brasas (moneda/progreso) — docs/especificaciones-tecnicas.md sección 5. Sólo el servidor
 // otorga brasas y las persiste en Storage; nunca cero para no castigar la participación.

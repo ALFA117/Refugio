@@ -45,8 +45,8 @@ export function registerMinigameHandlers() {
 }
 
 // Leaderboard conocido (top N, sin address). Vacío hasta el primer broadcast del servidor.
-let leaderboard: { displayName: string; brasas: number }[] = []
-export function getLeaderboard(): { displayName: string; brasas: number }[] {
+let leaderboard: { displayName: string; brasas: number; gamesPlayed: number }[] = []
+export function getLeaderboard(): { displayName: string; brasas: number; gamesPlayed: number }[] {
   return leaderboard
 }
 

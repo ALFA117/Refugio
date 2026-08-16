@@ -15,6 +15,7 @@ import { Vector3 } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
 import { FireHealth, ensureFireEntity } from '../shared/fire'
 import { room } from '../shared/messages'
+import { log } from '../shared/log'
 import { awardBrasasToParticipants, registerReferral } from './brasas'
 import {
   FOGATA_CENTER_X,
@@ -33,6 +34,7 @@ import {
   WOOD_SPAWN_RADIUS,
   FEED_WINDOW_SECONDS,
   FEED_PROXIMITY_METERS,
+  FEED_RATE_LIMIT_MS,
   WOOD_Y
 } from '../shared/constants'
 
@@ -48,8 +50,15 @@ const state = {
   nextWoodId: 1,
   wood: new Map<number, PendingWood>(),
   participants: new Set<string>(), // addresses que alimentaron el fuego en la ronda actual
-  tickAccum: 0 // acumulador para recalcular a SERVER_TICK, nunca por frame
+  tickAccum: 0, // acumulador para recalcular a SERVER_TICK, nunca por frame
+  feedStreak: 0, // leña alimentada a tiempo consecutiva, de cualquier jugador (combo del grupo)
+  bestFeedStreak: 0 // el máximo alcanzado en la ronda actual, para el resumen al cerrarla
 }
+
+// Anti-spam: último feedFire ACEPTADO (para el chequeo) de cada dirección, en ms de reloj real.
+// Vive fuera de `state` porque no es parte del estado de la ronda — persiste entre rondas para
+// que un jugador no pueda resetear su propio límite reiniciando algo del lado del cliente.
+const lastFeedAt = new Map<string, number>()
 
 export function main() {
   const center = Vector3.create(FOGATA_CENTER_X, 0, FOGATA_CENTER_Z)
@@ -92,9 +101,12 @@ function startRound() {
   state.spawnTimer = randomSpawnDelay()
   state.wood.clear()
   state.participants.clear()
+  state.feedStreak = 0
+  state.bestFeedStreak = 0
 
   writeFireHealth(true)
   room.send('roundStarted', { durationSeconds: ROUND_DURATION_SECONDS, startHealth: FIRE_START_HEALTH })
+  log.info('round_start')
 }
 
 function tickRound(dt: number) {
@@ -108,13 +120,14 @@ function tickRound(dt: number) {
     state.spawnTimer = randomSpawnDelay()
   }
 
-  // 3. Expirar la leña no alimentada a tiempo → penalización.
+  // 3. Expirar la leña no alimentada a tiempo → penalización + corta la racha del grupo.
   for (const [id, w] of state.wood) {
     if (w.fed) continue
     w.remaining -= dt
     if (w.remaining <= 0) {
       state.health = clampHealth(state.health - MISS_HEALTH_PENALTY)
-      room.send('woodResolved', { id, fed: false })
+      state.feedStreak = 0
+      room.send('woodResolved', { id, fed: false, streak: 0 })
       state.wood.delete(id)
     }
   }
@@ -136,11 +149,26 @@ function spawnWood() {
   room.send('woodSpawned', { id, x, z, ttlSeconds: FEED_WINDOW_SECONDS })
 }
 
-// Autoridad + validación server-side: sólo cuenta si la leña sigue viva y no fue alimentada.
-// Un cliente no puede inventar salud ni reclamar una leña dos veces. TODO(anti-cheat extra):
-// validar proximidad del jugador vía PlayerIdentityData antes de aceptar (patrón de la doc).
+// Autoridad + validación server-side: sólo cuenta si la leña sigue viva y no fue alimentada,
+// el jugador está realmente cerca, y no está mandando mensajes más rápido de lo humanamente
+// posible. Un cliente no puede inventar salud, reclamar una leña dos veces, ni inundar al
+// servidor de mensajes.
 function onFeedFire(woodId: number, from?: string) {
   if (state.phase !== 'round') return
+
+  // Anti-spam: si este jugador ya mandó un feedFire hace menos de FEED_RATE_LIMIT_MS,
+  // se descarta el mensaje entero — ni cuenta como intento de participación, ni se evalúa
+  // contra la leña. Se actualiza el timestamp igual (no sólo en aceptados) para que ráfagas
+  // de mensajes no se "cuelen" entre chequeos.
+  if (from) {
+    const now = Date.now()
+    const last = lastFeedAt.get(from) ?? 0
+    if (now - last < FEED_RATE_LIMIT_MS) {
+      log.warn('anti_cheat_reject', { reason: 'rate_limit', player: from })
+      return
+    }
+    lastFeedAt.set(from, now)
+  }
 
   // Cuenta como participante a quien intenta alimentar durante la ronda (para el reparto
   // de brasas al cierre). El servidor conoce `from` de forma verificada.
@@ -152,25 +180,37 @@ function onFeedFire(woodId: number, from?: string) {
   // Anti-cheat: rechazar si el jugador no está realmente cerca de esta leña. Sin posición
   // conocida (jugador recién desconectado, race de red) se rechaza por defecto — nunca se
   // acredita a ciegas.
-  if (from && !isNearWood(from, w)) return
+  if (from && !isNearWood(from, w)) {
+    log.warn('anti_cheat_reject', { reason: 'not_near_wood', player: from, woodId })
+    return
+  }
 
   w.fed = true
   state.health = clampHealth(state.health + FEED_HEALTH_GAIN)
+  state.feedStreak += 1
+  state.bestFeedStreak = Math.max(state.bestFeedStreak, state.feedStreak)
   writeFireHealth(true)
 
-  room.send('woodResolved', { id: woodId, fed: true })
+  room.send('woodResolved', { id: woodId, fed: true, streak: state.feedStreak })
   state.wood.delete(woodId)
 }
 
 function endRound() {
   const finalHealth = Math.round(state.health)
   const success = finalHealth >= ROUND_SUCCESS_HEALTH_THRESHOLD
+  const participantCount = state.participants.size
 
-  room.send('roundEnded', { success, finalHealth })
+  room.send('roundEnded', { success, finalHealth, bestStreak: state.bestFeedStreak })
+  log.info('round_end', { success, finalHealth, participants: participantCount, bestStreak: state.bestFeedStreak })
 
-  // Otorga brasas a los participantes y persiste balances + leaderboard (fire-and-forget:
-  // la cadena async no debe bloquear el tick; el módulo maneja sus propios errores).
-  void awardBrasasToParticipants([...state.participants], success, finalHealth)
+  // Sin participantes no hay a quién otorgar brasas ni leaderboard que refrescar — pasa
+  // directo a intermission. awardBrasasToParticipants ya no-opea con un array vacío, pero
+  // evitar la llamada deja esto explícito en vez de depender de ese guard interno.
+  if (participantCount > 0) {
+    // Otorga brasas a los participantes y persiste balances + leaderboard (fire-and-forget:
+    // la cadena async no debe bloquear el tick; el módulo maneja sus propios errores).
+    void awardBrasasToParticipants([...state.participants], success, finalHealth)
+  }
 
   state.phase = 'intermission'
   state.phaseTimer = ROUND_INTERMISSION_SECONDS

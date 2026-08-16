@@ -20,8 +20,12 @@ export const RefugioMessages = {
     z: Schemas.Float,
     ttlSeconds: Schemas.Float
   }),
-  woodResolved: Schemas.Map({ id: Schemas.Int, fed: Schemas.Boolean }),
-  roundEnded: Schemas.Map({ success: Schemas.Boolean, finalHealth: Schemas.Int }),
+  // `streak` = racha global actual de leña alimentada a tiempo sin ningún miss (de cualquier
+  // jugador) — combo cooperativo, no individual: en un minijuego multijugador donde cualquiera
+  // puede alimentar cualquier leña, no hay una forma limpia de atribuir un "miss" a un jugador
+  // específico, así que la racha refleja el ritmo colectivo del grupo.
+  woodResolved: Schemas.Map({ id: Schemas.Int, fed: Schemas.Boolean, streak: Schemas.Int }),
+  roundEnded: Schemas.Map({ success: Schemas.Boolean, finalHealth: Schemas.Int, bestStreak: Schemas.Int }),
 
   // Servidor → jugador participante (dirigido con {to:[address]}): su nuevo balance de
   // brasas tras cerrar la ronda. `earned` = brasas ganadas en esta ronda.
@@ -30,7 +34,9 @@ export const RefugioMessages = {
   // Servidor → Clientes (broadcast): top del leaderboard para mostrarlo in-world.
   // Sin address (privacidad en UI), sólo nombre visible y brasas.
   leaderboardUpdated: Schemas.Map({
-    entries: Schemas.Array(Schemas.Map({ displayName: Schemas.String, brasas: Schemas.Int }))
+    entries: Schemas.Array(
+      Schemas.Map({ displayName: Schemas.String, brasas: Schemas.Int, gamesPlayed: Schemas.Int })
+    )
   })
 }
 

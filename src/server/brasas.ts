@@ -10,6 +10,7 @@ import { getPlayer } from '@dcl/sdk/players'
 import { Storage, EnvVar } from '@dcl/sdk/server'
 import { signedFetch } from '~system/SignedFetch'
 import { room } from '../shared/messages'
+import { log } from '../shared/log'
 import {
   BRASAS_FULL_REWARD,
   BRASAS_REDUCED_REWARD,
@@ -30,7 +31,7 @@ type PlayerData = {
 // para no depender de la frescura del cache de lectura de Storage dentro de la sesión.
 const referredByMemory = new Map<string, string>()
 
-type LeaderboardEntry = { address: string; displayName: string; brasas: number }
+type LeaderboardEntry = { address: string; displayName: string; brasas: number; gamesPlayed: number }
 
 const PLAYER_KEY = 'brasas'
 const LEADERBOARD_KEY = 'leaderboard'
@@ -62,7 +63,7 @@ export async function awardBrasasToParticipants(
       data.set(address, existing)
       earnedByPlayer.set(address, base)
     } catch (e) {
-      console.error('[refugio] error cargando datos de', address, e)
+      log.error('brasas_load_failed', e, { player: address })
     }
   }
 
@@ -86,14 +87,14 @@ export async function awardBrasasToParticipants(
   for (const [address, pd] of data) {
     try {
       await Storage.player.set(address, PLAYER_KEY, pd)
-      updated.push({ address, displayName: resolveName(address), brasas: pd.balance })
+      updated.push({ address, displayName: resolveName(address), brasas: pd.balance, gamesPlayed: pd.gamesPlayed })
       void room.send(
         'brasasAwarded',
         { balance: pd.balance, earned: earnedByPlayer.get(address) ?? base },
         { to: [address] }
       )
     } catch (e) {
-      console.error('[refugio] error otorgando brasas a', address, e)
+      log.error('brasas_award_failed', e, { player: address })
     }
   }
 
@@ -117,7 +118,7 @@ export async function registerReferral(newPlayer: string, referrer: string): Pro
     await Storage.player.set(newPlayer, PLAYER_KEY, existing)
     referredByMemory.set(newPlayer, referrer)
   } catch (e) {
-    console.error('[refugio] error registrando referido', newPlayer, referrer, e)
+    log.error('referral_register_failed', e, { newPlayer, referrer })
   }
 }
 
@@ -138,15 +139,19 @@ async function updateLeaderboard(updated: LeaderboardEntry[]): Promise<void> {
     await Storage.set(LEADERBOARD_KEY, top)
 
     // Broadcast a todos para mostrarlo in-world (sin address, sólo nombre visible + brasas).
+    // `gamesPlayed` puede venir undefined de entradas viejas de Storage guardadas antes de
+    // este campo — se normaliza a 0 en vez de mandarlo undefined (el schema de red es Int,
+    // no opcional).
     void room.send('leaderboardUpdated', {
-      entries: top.map((e) => ({ displayName: e.displayName, brasas: e.brasas }))
+      entries: top.map((e) => ({ displayName: e.displayName, brasas: e.brasas, gamesPlayed: e.gamesPlayed ?? 0 }))
     })
 
     // Empuja el snapshot al sitio companion (Wall of Guardians) para el leaderboard público
     // fuera de Decentraland. Fire-and-forget; sólo actúa si hay EnvVars configuradas.
     void pushToCompanion(top)
+    log.info('leaderboard_updated', { size: top.length })
   } catch (e) {
-    console.error('[refugio] error actualizando leaderboard', e)
+    log.error('leaderboard_update_failed', e)
   }
 }
 
@@ -166,12 +171,13 @@ async function pushToCompanion(top: LeaderboardEntry[]): Promise<void> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-refugio-secret': secret },
         body: JSON.stringify({
-          entries: top.map((e) => ({ displayName: e.displayName, brasas: e.brasas }))
+          entries: top.map((e) => ({ displayName: e.displayName, brasas: e.brasas, gamesPlayed: e.gamesPlayed ?? 0 }))
         })
       }
     })
+    log.info('companion_push_ok', { size: top.length })
   } catch (e) {
-    console.error('[refugio] error empujando snapshot al companion', e)
+    log.error('companion_push_failed', e)
   }
 }
 
