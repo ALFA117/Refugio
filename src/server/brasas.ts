@@ -31,6 +31,15 @@ type PlayerData = {
 // para no depender de la frescura del cache de lectura de Storage dentro de la sesión.
 const referredByMemory = new Map<string, string>()
 
+// Real race window (encontrado en revisión, no en producción): registerReferral es async y su
+// único guard síncrono es `referredByMemory.has(newPlayer)`, que sólo se completa DESPUÉS del
+// await a Storage. Si el mensaje llega dos veces para el mismo newPlayer antes de que la
+// primera llamada termine (reintento del cliente, doble tap, red lenta), ambas pasan el guard
+// y ambas escriben Storage. Nunca observado en juego real, pero es una condición de carrera
+// legítima en runtime single-threaded con await — se cierra con un guard "en vuelo" separado
+// del de "ya completado".
+const referralInFlight = new Set<string>()
+
 type LeaderboardEntry = { address: string; displayName: string; brasas: number; gamesPlayed: number }
 
 const PLAYER_KEY = 'brasas'
@@ -106,6 +115,8 @@ export async function awardBrasasToParticipants(
 export async function registerReferral(newPlayer: string, referrer: string): Promise<void> {
   if (!referrer || referrer === newPlayer) return // no self-referral
   if (referredByMemory.has(newPlayer)) return // ya vinculado en esta sesión
+  if (referralInFlight.has(newPlayer)) return // una llamada para este jugador ya está en curso
+  referralInFlight.add(newPlayer)
 
   try {
     const existing = (await Storage.player.get<PlayerData>(newPlayer, PLAYER_KEY)) ?? defaultPlayerData()
@@ -119,6 +130,8 @@ export async function registerReferral(newPlayer: string, referrer: string): Pro
     referredByMemory.set(newPlayer, referrer)
   } catch (e) {
     log.error('referral_register_failed', e, { newPlayer, referrer })
+  } finally {
+    referralInFlight.delete(newPlayer)
   }
 }
 
