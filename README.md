@@ -6,8 +6,8 @@
 
 A cooperative multiplayer scene for **Decentraland (SDK7)**: the fire grows with the players present, and strangers keep it alive together. No host, no scheduled event, no coordination.
 
-[![Play the web demo](https://img.shields.io/badge/Play_the_web_demo-no_install-E8743B?style=for-the-badge&logo=vercel&logoColor=white)](https://wall-of-guardians.vercel.app/demo)
-[![Leaderboard](https://img.shields.io/badge/Leaderboard-Wall_of_Guardians-1a1a1a?style=for-the-badge)](https://wall-of-guardians.vercel.app)
+[![Play the web demo](https://img.shields.io/badge/Play_the_web_demo-no_install-E8743B?style=for-the-badge&logo=vercel&logoColor=white)](https://refugio-wall.vercel.app/demo)
+[![Leaderboard](https://img.shields.io/badge/Leaderboard-Wall_of_Guardians-1a1a1a?style=for-the-badge)](https://refugio-wall.vercel.app)
 [![Friendzone Hackathon](https://img.shields.io/badge/Friendzone_Hackathon-DoraHacks-6d4bd1?style=for-the-badge)](docs/submission/buidl-page.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-555?style=for-the-badge)](LICENSE)
 
@@ -20,14 +20,14 @@ A cooperative multiplayer scene for **Decentraland (SDK7)**: the fire grows with
 
 <img src="docs/img/hero.jpg" alt="Refugio's pitch page on a laptop and the playable web demo of the feed-the-fire mechanic on a phone" width="100%" />
 
-<sub>The pitch page (<a href="docs/submission/pitch.html"><code>docs/submission/pitch.html</code></a>) and the <a href="https://wall-of-guardians.vercel.app/demo">web demo</a> of the same mechanic. The scene itself runs inside the Decentraland client.</sub>
+<sub>The pitch page (<a href="docs/submission/pitch.html"><code>docs/submission/pitch.html</code></a>) and the <a href="https://refugio-wall.vercel.app/demo">web demo</a> of the same mechanic. The scene itself runs inside the Decentraland client.</sub>
 
-**[▶ Try it in the browser](https://wall-of-guardians.vercel.app/demo)** · **[Leaderboard](https://wall-of-guardians.vercel.app)** · **[How it works](#-how-it-works)** · **[Run the scene](#-run-it-locally)**
+**[▶ Try it in the browser](https://refugio-wall.vercel.app/demo)** · **[Leaderboard](https://refugio-wall.vercel.app)** · **[How it works](#-how-it-works)** · **[Run the scene](#-run-it-locally)**
 
 </div>
 
 > [!NOTE]
-> **Refugio runs in Decentraland, not on a web page.** To play the real scene you need the [Decentraland desktop client](https://dcl.gg/explorer). The scene is not published to a parcel yet and the demo video is still pending, so for now you can run it locally (below) or try the mechanic in the browser at **[wall-of-guardians.vercel.app/demo](https://wall-of-guardians.vercel.app/demo)**. The web companion lives in **[ALFA117/refugio-wall](https://github.com/ALFA117/refugio-wall)**.
+> **Refugio runs in Decentraland, not on a web page.** To play the real scene you need the [Decentraland desktop client](https://dcl.gg/explorer). The scene is not published to a parcel yet and the demo video is still pending, so for now you can run it locally (below) or try the mechanic in the browser at **[refugio-wall.vercel.app/demo](https://refugio-wall.vercel.app/demo)**. The web companion lives in **[ALFA117/refugio-wall](https://github.com/ALFA117/refugio-wall)**.
 
 ---
 
